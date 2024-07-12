@@ -3,7 +3,7 @@ import "./App.css";
 import { Button, Card, Input, Radio } from "antd";
 
 function App() {
-  const [unisatInstalled, setUnisatInstalled] = useState(false);
+  const [sat20Installed, setSat20Installed] = useState(false);
   const [connected, setConnected] = useState(false);
   const [accounts, setAccounts] = useState<string[]>([]);
   const [publicKey, setPublicKey] = useState("");
@@ -16,17 +16,17 @@ function App() {
   const [network, setNetwork] = useState("livenet");
 
   const getBasicInfo = async () => {
-    const unisat = (window as any).unisat;
-    const [address] = await unisat.getAccounts();
+    const sat20 = (window as any).sat20;
+    const [address] = await sat20.getAccounts();
     setAddress(address);
 
-    const publicKey = await unisat.getPublicKey();
+    const publicKey = await sat20.getPublicKey();
     setPublicKey(publicKey);
 
-    const balance = await unisat.getBalance();
+    const balance = await sat20.getBalance();
     setBalance(balance);
 
-    const network = await unisat.getNetwork();
+    const network = await sat20.getNetwork();
     setNetwork(network);
   };
 
@@ -59,57 +59,57 @@ function App() {
 
   useEffect(() => {
 
-    async function checkUnisat() {
-      let unisat = (window as any).unisat;
+    async function checkSat20() {
+      let sat20 = (window as any).sat20;
 
-      for (let i = 1; i < 10 && !unisat; i += 1) {
-          await new Promise((resolve) => setTimeout(resolve, 100*i));
-          unisat = (window as any).unisat;
+      for (let i = 1; i < 10 && !sat20; i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 100 * i));
+        sat20 = (window as any).sat20;
       }
 
-      if(unisat){
-          setUnisatInstalled(true);
-      }else if (!unisat)
-          return;
+      if (sat20) {
+        setSat20Installed(true);
+      } else if (!sat20)
+        return;
 
-      unisat.getAccounts().then((accounts: string[]) => {
-          handleAccountsChanged(accounts);
+      sat20.getAccounts().then((accounts: string[]) => {
+        handleAccountsChanged(accounts);
       });
 
-      unisat.on("accountsChanged", handleAccountsChanged);
-      unisat.on("networkChanged", handleNetworkChanged);
+      sat20.on("accountsChanged", handleAccountsChanged);
+      sat20.on("networkChanged", handleNetworkChanged);
 
       return () => {
-          unisat.removeListener("accountsChanged", handleAccountsChanged);
-          unisat.removeListener("networkChanged", handleNetworkChanged);
+        sat20.removeListener("accountsChanged", handleAccountsChanged);
+        sat20.removeListener("networkChanged", handleNetworkChanged);
       };
     }
 
-    checkUnisat().then();
+    checkSat20().then();
   }, []);
 
-  if (!unisatInstalled) {
+  if (!sat20Installed) {
     return (
       <div className="App">
         <header className="App-header">
           <div>
             <Button
               onClick={() => {
-                window.location.href = "https://unisat.io";
+                window.location.href = "https://sat20.org";
               }}
             >
-              Install Unisat Wallet
+              Install Sat02 Wallet
             </Button>
           </div>
         </header>
       </div>
     );
   }
-  const unisat = (window as any).unisat;
+  const sat20 = (window as any).sat20;
   return (
     <div className="App">
       <header className="App-header">
-        <p>Unisat Wallet Demo</p>
+        <p>Sat20 Wallet Demo</p>
 
         {connected ? (
           <div
@@ -149,7 +149,7 @@ function App() {
                 <div style={{ fontWeight: "bold" }}>Network:</div>
                 <Radio.Group
                   onChange={async (e) => {
-                    const network = await unisat.switchNetwork(e.target.value);
+                    const network = await sat20.switchNetwork(e.target.value);
                     setNetwork(network);
                   }}
                   value={network}
@@ -160,6 +160,7 @@ function App() {
               </div>
             </Card>
 
+            <AddAccountCard />
             <SignPsbtCard />
             <SignMessageCard />
             <PushTxCard />
@@ -170,11 +171,11 @@ function App() {
           <div>
             <Button
               onClick={async () => {
-                const result = await unisat.requestAccounts();
+                const result = await sat20.requestAccounts();
                 handleAccountsChanged(result);
               }}
             >
-              Connect Unisat Wallet
+              Connect Sat20 Wallet
             </Button>
           </div>
         )}
@@ -205,7 +206,7 @@ function SignPsbtCard() {
         style={{ marginTop: 10 }}
         onClick={async () => {
           try {
-            const psbtResult = await (window as any).unisat.signPsbt(psbtHex);
+            const psbtResult = await (window as any).sat20.signPsbt(psbtHex);
             setPsbtResult(psbtResult);
           } catch (e) {
             setPsbtResult((e as any).message);
@@ -213,6 +214,37 @@ function SignPsbtCard() {
         }}
       >
         Sign Psbt
+      </Button>
+    </Card>
+  );
+}
+
+function AddAccountCard() {
+  const [acountCount, setAcountCount] = useState("");
+
+  return (
+    <Card size="small" title="Add Accounts" style={{ width: 300, margin: 10 }}>
+      <div style={{ textAlign: "left", marginTop: 10 }}>
+        <div style={{ fontWeight: "bold" }}>Count:</div>
+        <Input
+          defaultValue={acountCount}
+          onChange={(e) => {
+            setAcountCount(e.target.value);
+          }}
+        ></Input>
+      </div>
+      <Button
+        style={{ marginTop: 10 }}
+        onClick={async () => {
+          try {
+            const result = await (window as any).sat20.addAccounts(acountCount);
+            console.log(result);
+          } catch (e) {
+            console.log((e as any).message);
+          }
+        }}
+      >
+        Add Accounts
       </Button>
     </Card>
   );
@@ -239,7 +271,7 @@ function SignMessageCard() {
       <Button
         style={{ marginTop: 10 }}
         onClick={async () => {
-          const signature = await (window as any).unisat.signMessage(message);
+          const signature = await (window as any).sat20.signMessage(message);
           setSignature(signature);
         }}
       >
@@ -275,7 +307,7 @@ function PushTxCard() {
         style={{ marginTop: 10 }}
         onClick={async () => {
           try {
-            const txid = await (window as any).unisat.pushTx(rawtx);
+            const txid = await (window as any).sat20.pushTx(rawtx);
             setTxid(txid);
           } catch (e) {
             setTxid((e as any).message);
@@ -310,7 +342,7 @@ function PushPsbtCard() {
         style={{ marginTop: 10 }}
         onClick={async () => {
           try {
-            const txid = await (window as any).unisat.pushPsbt(psbtHex);
+            const txid = await (window as any).sat20.pushPsbt(psbtHex);
             setTxid(txid);
           } catch (e) {
             setTxid((e as any).message);
@@ -358,7 +390,7 @@ function SendBitcoin() {
         style={{ marginTop: 10 }}
         onClick={async () => {
           try {
-            const txid = await (window as any).unisat.sendBitcoin(
+            const txid = await (window as any).sat20.sendBitcoin(
               toAddress,
               satoshis
             );
